@@ -9,6 +9,9 @@ class Teacher(models.Model):
         )
     picture = models.URLField('foto')
 
+    class Meta:
+        unique_together = ['name', 'description']
+
 
 class ClassRoom(models.Model):
     name = models.CharField('aula', max_length=100)
