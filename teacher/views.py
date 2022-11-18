@@ -1,5 +1,5 @@
 from django.db import DatabaseError,IntegrityError
-from rest_framework.views import APIView, exception_handler
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.exceptions import APIException, ValidationError
@@ -14,26 +14,37 @@ from teacher.serializers import (
     AddClassSerializer, ClassRoomSerializer, TeacherSerializer
 )
 
-def custom_exception_handler(exc, context):
-    # Call REST framework's default exception handler first,
-    # to get the standard error response.
-    response = exception_handler(exc, context)
 
-    # Now add the HTTP status code to the response.
-    if response is not None:
-        response.data['status_code'] = response.status_code
-
-
-    return response
 
 def _get_full_details(detail):
-    if isinstance(detail, list):
-        return [_get_full_details(item) for item in detail]
-    elif isinstance(detail, dict):
-        return {key: _get_full_details(value) for key, value in detail.items()}
-    return {
-        'message': detail
-    }
+    if isinstance(detail, dict):
+        # return {key: _get_full_details(value) for key, value in detail.items()}
+        lista_resp=[]
+        for key, value in detail.items():
+            # print('chave', key, 'valor', value)
+            dict_resp = {key: value}
+            if isinstance(value, list):
+                for item in value:
+                    lista_resp.append(item)
+        # print('dados dicionario:', dict_resp)
+        try:
+            # print(v_key)
+            # print(detail)
+            if key == 'non_field_errors':
+                content = {"message": lista_resp[0]}
+            else:
+                content = {
+                    "message": "campo: {0} - {1}".format(key, lista_resp[0]),
+                    "campo": key
+                }
+            return content 
+        except Exception as e:
+            print(e)
+    else:
+        print('caiu aqui')
+        return {
+            'message': detail
+        }
 
 class TeacherAPIView(ModelViewSet):
     serializer_class = TeacherSerializer
@@ -61,8 +72,10 @@ class TeacherAPIView(ModelViewSet):
             return Response(content, status=HTTP_400_BAD_REQUEST)
 
         except ValidationError as err:
-            content = {"message":"Dados inválidos " + str(err)}
+            # content = {"message":"Dados inválidos: " + str(err.detail)}
             # print(custom_exception_handler(exc=err, context=err.detail))
+            # print(_get_full_details(err.detail))
+            content = _get_full_details(err.detail)
             return Response(content, status=HTTP_400_BAD_REQUEST)
         
         except Exception as e:
