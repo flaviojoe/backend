@@ -33,6 +33,14 @@ def _get_full_details(detail):
             if key == 'non_field_errors':
                 content = {"message": lista_resp[0]}
             else:
+                if key == 'picture':
+                    key = 'foto'
+                elif key == 'description':
+                    key = 'descrição'
+                elif key == 'hour_value':
+                    key = 'valor_hora'
+                elif key == 'name':
+                    key = 'nome'
                 content = {
                     "message": "campo: {0} - {1}".format(key, lista_resp[0]),
                     "campo": key
